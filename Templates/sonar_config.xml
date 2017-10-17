@@ -1,0 +1,162 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<maven2-moduleset plugin="maven-plugin@2.15.1">
+    <actions/>
+    <description></description>
+    <keepDependencies>false</keepDependencies>
+    <properties>
+        <jenkins.model.BuildDiscarderProperty>
+            <strategy class="hudson.tasks.LogRotator">
+                <daysToKeep>-1</daysToKeep>
+                <numToKeep>20</numToKeep>
+                <artifactDaysToKeep>-1</artifactDaysToKeep>
+                <artifactNumToKeep>-1</artifactNumToKeep>
+            </strategy>
+        </jenkins.model.BuildDiscarderProperty>
+        <com.sonyericsson.rebuild.RebuildSettings plugin="rebuild@1.25">
+            <autoRebuild>false</autoRebuild>
+            <rebuildDisabled>false</rebuildDisabled>
+        </com.sonyericsson.rebuild.RebuildSettings>
+    </properties>
+    <scm class="hudson.plugins.git.GitSCM" plugin="git@3.2.0">
+        <configVersion>2</configVersion>
+        <userRemoteConfigs>
+            <hudson.plugins.git.UserRemoteConfig>
+                <url>https://jenkins-system-user@develop.test.no/git/scm/vaapc/tobeupdatedreponame</url>
+                <credentialsId>75321776-caf3-4c42-8282-f1e957a01f7c</credentialsId>
+            </hudson.plugins.git.UserRemoteConfig>
+        </userRemoteConfigs>
+        <branches>
+            <hudson.plugins.git.BranchSpec>
+                <name>*/feature/*</name>
+            </hudson.plugins.git.BranchSpec>
+            <hudson.plugins.git.BranchSpec>
+                <name>*/bugfix/*</name>
+            </hudson.plugins.git.BranchSpec>
+        </branches>
+        <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+        <submoduleCfg class="list"/>
+        <extensions/>
+    </scm>
+    <canRoam>true</canRoam>
+    <disabled>false</disabled>
+    <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+    <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+    <triggers>
+        <hudson.triggers.SCMTrigger>
+            <spec>H/2 * * * *</spec>
+            <ignorePostCommitHooks>true</ignorePostCommitHooks>
+        </hudson.triggers.SCMTrigger>
+    </triggers>
+    <concurrentBuild>false</concurrentBuild>
+    <rootModule>
+        <groupId>no.testApp.merchant.dwo</groupId>
+        <artifactId>dwo-api-parent</artifactId>
+    </rootModule>
+    <goals>clean -U cobertura:cobertura -Dcobertura.report.format=xml sonar:sonar -Dmaven.test.failure.ignore=false</goals>
+    <aggregatorStyleBuild>true</aggregatorStyleBuild>
+    <incrementalBuild>false</incrementalBuild>
+    <ignoreUpstremChanges>true</ignoreUpstremChanges>
+    <ignoreUnsuccessfulUpstreams>false</ignoreUnsuccessfulUpstreams>
+    <archivingDisabled>true</archivingDisabled>
+    <siteArchivingDisabled>false</siteArchivingDisabled>
+    <fingerprintingDisabled>true</fingerprintingDisabled>
+    <resolveDependencies>false</resolveDependencies>
+    <processPlugins>false</processPlugins>
+    <mavenValidationLevel>-1</mavenValidationLevel>
+    <runHeadless>false</runHeadless>
+    <disableTriggerDownstreamProjects>false</disableTriggerDownstreamProjects>
+    <blockTriggerWhenBuilding>true</blockTriggerWhenBuilding>
+    <settings class="jenkins.mvn.DefaultSettingsProvider"/>
+    <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
+    <reporters/>
+    <publishers/>
+    <buildWrappers>
+	    <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.32">
+            <deleteDirs>false</deleteDirs>
+            <cleanupParameter></cleanupParameter>
+            <externalDelete></externalDelete>
+        </hudson.plugins.ws__cleanup.PreBuildCleanup>
+        <org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper plugin="credentials-binding@1.11">
+            <bindings>
+                <org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordBinding>
+                    <credentialsId>75321776-caf3-4c42-8282-f1e957a01f7c</credentialsId>
+                    <variable>bitbucketAccess</variable>
+                </org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordBinding>
+            </bindings>
+        </org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper>
+    </buildWrappers>
+    <prebuilders/>
+    <postbuilders>
+        <org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder plugin="conditional-buildstep@1.3.5">
+            <condition class="org.jenkins_ci.plugins.run_condition.core.StatusCondition" plugin="run-condition@1.0">
+                <worstResult>
+                    <name>ABORTED</name>
+                    <ordinal>4</ordinal>
+                    <color>ABORTED</color>
+                    <completeBuild>false</completeBuild>
+                </worstResult>
+                <bestResult>
+                    <name>UNSTABLE</name>
+                    <ordinal>1</ordinal>
+                    <color>YELLOW</color>
+                    <completeBuild>true</completeBuild>
+                </bestResult>
+            </condition>
+            <buildStep class="hudson.tasks.Shell">
+                <command>batchstatus=FAILED
+touch build0.json
+
+echo &apos;{&apos; &gt; build0.json
+echo &apos;&quot;state&quot;: &quot;&apos;${batchstatus}&apos;&quot;,&apos; &gt;&gt;  build0.json
+echo &apos;&quot;key&quot;: &quot;&apos;${JOB_NAME}&apos;&quot;,&apos; &gt;&gt; build0.json
+echo &apos;&quot;name&quot;: &quot;&apos;${JOB_NAME}&apos;-&apos;${BUILD_NUMBER}&apos;&quot;,&apos; &gt;&gt; build0.json
+echo &apos;&quot;url&quot;: &quot;&apos;${JENKINS_URL}&apos;job/&apos;${JOB_NAME}&apos;/&apos;${BUILD_NUMBER}&apos;/console&quot;&apos; &gt;&gt; build0.json
+echo &apos;}&apos; &gt;&gt; build0.json
+
+curl -u $bitbucketAccess -H &quot;Content-Type: application/json&quot; -X POST https://develop.test.no/git/rest/build-status/1.0/commits/${GIT_COMMIT}  -d @build0.json
+
+rm build0.json</command>
+            </buildStep>
+            <runner class="org.jenkins_ci.plugins.run_condition.BuildStepRunner$Fail" plugin="run-condition@1.0"/>
+        </org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder>
+        <org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder plugin="conditional-buildstep@1.3.5">
+            <condition class="org.jenkins_ci.plugins.run_condition.core.StatusCondition" plugin="run-condition@1.0">
+                <worstResult>
+                    <name>SUCCESS</name>
+                    <ordinal>0</ordinal>
+                    <color>BLUE</color>
+                    <completeBuild>true</completeBuild>
+                </worstResult>
+                <bestResult>
+                    <name>SUCCESS</name>
+                    <ordinal>0</ordinal>
+                    <color>BLUE</color>
+                    <completeBuild>true</completeBuild>
+                </bestResult>
+            </condition>
+            <buildStep class="hudson.tasks.Shell">
+                <command>batchstatus=SUCCESSFUL
+
+touch build0.json
+
+echo &apos;{&apos; &gt; build0.json
+echo &apos;&quot;state&quot;: &quot;&apos;${batchstatus}&apos;&quot;,&apos; &gt;&gt;  build0.json
+echo &apos;&quot;key&quot;: &quot;&apos;${JOB_NAME}&apos;&quot;,&apos; &gt;&gt; build0.json
+echo &apos;&quot;name&quot;: &quot;&apos;${JOB_NAME}&apos;-&apos;${BUILD_NUMBER}&apos;&quot;,&apos; &gt;&gt; build0.json
+echo &apos;&quot;url&quot;: &quot;&apos;${JENKINS_URL}&apos;job/&apos;${JOB_NAME}&apos;/&apos;${BUILD_NUMBER}&apos;/console&quot;&apos; &gt;&gt; build0.json
+echo &apos;}&apos; &gt;&gt; build0.json
+
+curl -u $bitbucketAccess -H &quot;Content-Type: application/json&quot; -X POST https://develop.test.no/git/rest/build-status/1.0/commits/${GIT_COMMIT}  -d @build0.json
+
+rm build0.json</command>
+            </buildStep>
+            <runner class="org.jenkins_ci.plugins.run_condition.BuildStepRunner$Fail" plugin="run-condition@1.0"/>
+        </org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder>
+    </postbuilders>
+    <runPostStepsIfResult>
+        <name>FAILURE</name>
+        <ordinal>2</ordinal>
+        <color>RED</color>
+        <completeBuild>true</completeBuild>
+    </runPostStepsIfResult>
+</maven2-moduleset>
